@@ -7,7 +7,7 @@ import time
 from fastapi.responses import FileResponse
 import database
 from fastapi.middleware.cors import CORSMiddleware
-
+import pyttsx3
 
 import models, tts
 
@@ -72,19 +72,24 @@ def read_root():
 @app.post("/generate-audio/")
 def generate_audio(input: TextInput, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     try:
+        if input.text is None or input.text.strip() == "":
+            raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+
         output_filename = f"output_{uuid.uuid4()}.mp3"
         output_path = f"./audio/{output_filename}"
 
-        # Convert text to speech using pyttsx3
+        print("Initializing TTS engine...")
+        engine = pyttsx3.init()
+        if engine is None:
+            raise Exception("Failed to initialize TTS engine.")
+
         tts.text_to_speech(input.text, output_path)
 
-        # Save the generated audio details in the database
         db_record = models.TextToSpeech(text=input.text, audio_file=output_path)
         db.add(db_record)
         db.commit()
         db.refresh(db_record)
 
-        # Add a background task to delete the audio file and its DB entry after one minute
         background_tasks.add_task(delete_file_and_entry, output_path, db_record.id)
 
         return {"audio_file": output_filename}
