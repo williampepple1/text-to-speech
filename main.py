@@ -5,8 +5,10 @@ import uuid
 import os
 import time
 from fastapi.responses import FileResponse
-from app import models, database, tts
+import database
 from fastapi.middleware.cors import CORSMiddleware
+
+import models, tts
 
 app = FastAPI()
 
@@ -49,7 +51,7 @@ def read_root():
 @app.post("/generate-audio/")
 def generate_audio(input: TextInput, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     output_filename = f"output_{uuid.uuid4()}.mp3"
-    output_path = f"./app/audio/{output_filename}"
+    output_path = f"./audio/{output_filename}"
 
     # Convert text to speech using pyttsx3
     tts.text_to_speech(input.text, output_path)
@@ -67,7 +69,7 @@ def generate_audio(input: TextInput, db: Session = Depends(get_db), background_t
 
 @app.get("/audio/{file_name}")
 def get_audio(file_name: str):
-    file_path = f"./app/audio/{file_name}"
+    file_path = f"./audio/{file_name}"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Audio file not found")
     return FileResponse(file_path)
