@@ -6,8 +6,22 @@ import os
 import time
 from fastapi.responses import FileResponse
 from app import models, database, tts
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "*",  
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Initialize the database
 database.init_db()
