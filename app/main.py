@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import uuid
 import os
+import time
 from fastapi.responses import FileResponse
 from app import models, database, tts
 
@@ -22,8 +23,13 @@ def get_db():
     finally:
         db.close()
 
+def delete_file(file_path: str):
+    time.sleep(60)  # Wait for one minute
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
 @app.post("/generate-audio/")
-def generate_audio(input: TextInput, db: Session = Depends(get_db)):
+def generate_audio(input: TextInput, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     output_filename = f"output_{uuid.uuid4()}.mp3"
     output_path = f"./app/audio/{output_filename}"
 
@@ -35,6 +41,9 @@ def generate_audio(input: TextInput, db: Session = Depends(get_db)):
     db.add(db_record)
     db.commit()
     db.refresh(db_record)
+
+    # Add a background task to delete the audio file after one minute
+    background_tasks.add_task(delete_file, output_path)
 
     return {"audio_file": output_filename}
 
