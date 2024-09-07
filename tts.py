@@ -1,9 +1,14 @@
 import pyttsx3
-
-# Initialize pyttsx3 engine
-engine = pyttsx3.init()
+import platform
 
 def text_to_speech(text: str, output_path: str):
-    # Convert text to speech and save it to an audio file
+    engine = pyttsx3.init()
+
+    # Check the platform
+    if platform.system() == "Windows":
+        engine.setProperty('voice', 'sapi5')
+    elif platform.system() == "Linux":
+        engine.setProperty('voice', 'espeak')
+
     engine.save_to_file(text, output_path)
     engine.runAndWait()
