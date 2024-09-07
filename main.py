@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 import database
 from fastapi.middleware.cors import CORSMiddleware
 
+
 import models, tts
 
 app = FastAPI()
@@ -39,10 +40,30 @@ def get_db():
     finally:
         db.close()
 
-def delete_file(file_path: str):
-    time.sleep(60)  # Wait for one minute
+
+def delete_file_and_entry(file_path: str, file_id: int):
+    # Wait for one minute
+    time.sleep(60)
+
+    # Check if the file exists, then delete it
     if os.path.exists(file_path):
         os.remove(file_path)
+        print(f"File {file_path} deleted.")
+
+    # Open a new database session
+    db = database.SessionLocal()
+
+    try:
+        # Delete the corresponding database entry
+        db_entry = db.query(models.TextToSpeech).filter(models.TextToSpeech.id == file_id).first()
+        
+        if db_entry:
+            db.delete(db_entry)
+            db.commit()
+            print(f"Database entry with ID {file_id} deleted.")
+    finally:
+        # Always close the session
+        db.close()
 
 @app.get("/")
 def read_root():
@@ -63,8 +84,8 @@ def generate_audio(input: TextInput, db: Session = Depends(get_db), background_t
         db.commit()
         db.refresh(db_record)
 
-        # Add a background task to delete the audio file after one minute
-        background_tasks.add_task(delete_file, output_path)
+        # Add a background task to delete the audio file and its DB entry after one minute
+        background_tasks.add_task(delete_file_and_entry, output_path, db_record.id)
 
         return {"audio_file": output_filename}
     except Exception as e:
