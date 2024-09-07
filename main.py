@@ -50,22 +50,26 @@ def read_root():
 
 @app.post("/generate-audio/")
 def generate_audio(input: TextInput, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
-    output_filename = f"output_{uuid.uuid4()}.mp3"
-    output_path = f"./audio/{output_filename}"
+    try:
+        output_filename = f"output_{uuid.uuid4()}.mp3"
+        output_path = f"./audio/{output_filename}"
 
-    # Convert text to speech using pyttsx3
-    tts.text_to_speech(input.text, output_path)
+        # Convert text to speech using pyttsx3
+        tts.text_to_speech(input.text, output_path)
 
-    # Save the generated audio details in the database
-    db_record = models.TextToSpeech(text=input.text, audio_file=output_path)
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
+        # Save the generated audio details in the database
+        db_record = models.TextToSpeech(text=input.text, audio_file=output_path)
+        db.add(db_record)
+        db.commit()
+        db.refresh(db_record)
 
-    # Add a background task to delete the audio file after one minute
-    background_tasks.add_task(delete_file, output_path)
+        # Add a background task to delete the audio file after one minute
+        background_tasks.add_task(delete_file, output_path)
 
-    return {"audio_file": output_filename}
+        return {"audio_file": output_filename}
+    except Exception as e:
+        print(f"Error during audio generation: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/audio/{file_name}")
 def get_audio(file_name: str):
