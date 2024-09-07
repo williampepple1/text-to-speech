@@ -42,6 +42,10 @@ def delete_file(file_path: str):
     if os.path.exists(file_path):
         os.remove(file_path)
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to Text to Speech API!"}
+
 @app.post("/generate-audio/")
 def generate_audio(input: TextInput, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     output_filename = f"output_{uuid.uuid4()}.mp3"
