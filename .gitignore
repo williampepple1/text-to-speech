@@ -1,3 +1,34 @@
 /venv
 /app/__pycache__/
 /__pycache__/
+
+# Coqui TTS models and checkpoints
+xtts_finetuned/
+xtts_finetuned_export/
+*.pth
+*.ckpt
+!requirements.txt
+
+# Voice datasets
+voice_dataset/
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Output audio
+output.wav
+test_output.wav
+audio/*.mp3
+
+# Kaggle
+kaggle/working/
+
+# Python cache
+*.pyc
+*.pyo
+__pycache__/
+.eggs/
+*.egg-info/
+dist/
+build/

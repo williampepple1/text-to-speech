@@ -1,0 +1,15 @@
+# Install these after training on Kaggle to run local inference
+TTS>=0.22.0
+torch>=2.0.0
+torchaudio>=2.0.0
+soundfile>=0.12.0
+librosa>=0.10.0
+numpy>=1.24.0
+einops
+transformers>=4.30.0
+tokenizers>=0.13.0
+sentencepiece
+scipy
+pydub
+coqpit>=0.0.15
+trainer>=0.0.32

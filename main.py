@@ -7,9 +7,25 @@ import time
 from fastapi.responses import FileResponse
 import database
 from fastapi.middleware.cors import CORSMiddleware
-import pyttsx3
 
 import models, tts
+
+USE_COQUI = False
+try:
+    from inference_coqui import VoiceCloner
+    COQUI_MODEL_DIR = "xtts_finetuned"
+    if os.path.isdir(COQUI_MODEL_DIR) and any(
+        f.endswith(".pth") for f in os.listdir(COQUI_MODEL_DIR)
+    ):
+        USE_COQUI = True
+        coqui_cloner = VoiceCloner(model_dir=COQUI_MODEL_DIR)
+        print(f"Coqui TTS model loaded from {COQUI_MODEL_DIR}")
+    else:
+        print(f"Coqui model not found in {COQUI_MODEL_DIR}, using pyttsx3 fallback")
+except ImportError:
+    print("Coqui TTS not installed, using pyttsx3 fallback")
+except Exception as e:
+    print(f"Could not load Coqui model: {e}, using pyttsx3 fallback")
 
 app = FastAPI()
 
@@ -78,12 +94,10 @@ def generate_audio(input: TextInput, db: Session = Depends(get_db), background_t
         output_filename = f"output_{uuid.uuid4()}.mp3"
         output_path = f"./audio/{output_filename}"
 
-        print("Initializing TTS engine...")
-        engine = pyttsx3.init()
-        if engine is None:
-            raise Exception("Failed to initialize TTS engine.")
-
-        tts.text_to_speech(input.text, output_path)
+        if USE_COQUI:
+            coqui_cloner.speak(input.text, output_path)
+        else:
+            tts.text_to_speech(input.text, output_path)
 
         db_record = models.TextToSpeech(text=input.text, audio_file=output_path)
         db.add(db_record)
